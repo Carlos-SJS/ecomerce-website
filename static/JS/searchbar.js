@@ -4,8 +4,6 @@ function search(){
     params.set("Search", encodeURIComponent(search_querry));
     var querry_string = params.toString();
 
-    console.log(window.location.origin);
-    console.log(window.location.pathname);
     var newURL = window.location.origin + "/products?" +querry_string;
     window.location.href = newURL;
 }

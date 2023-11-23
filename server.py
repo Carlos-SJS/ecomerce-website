@@ -65,7 +65,7 @@ def products_page():
     products = []
     #res = cur.execute("SELECT Name, Price, Description, ProductId FROM Products").fetchall()
     for prod in res:
-        products.append({"Name": prod[0], "Price": prod[1], "Description": prod[2],"Images": []})
+        products.append({"Name": prod[0], "Price": prod[1], "Description": prod[2],"Images": [], "pId": prod[3]})
         
         imgs = cur.execute(f"SELECT url FROM ProductImages WHERE fk_ProdId = {prod[3]}")
         for img in imgs:
@@ -73,9 +73,30 @@ def products_page():
         
     con.close()
 
-    return render_template("products.html", title="Products - Mamazon", products=products, categories=categories, create_user=flask_login.current_user)
+    return render_template("products.html", title="Products - Mamazon", products=products, categories=categories, current_user=flask_login.current_user)
 
-
+@app.route("/product")
+def product_page():
+    product_id = request.args["id"]
+    
+    con = sql.connect("amazon.db")
+    cur = con.cursor()
+    
+    res = cur.execute(f"SELECT Name, Price, Description, StockSize FROM Products WHERE Id = {product_id}").fetchall()
+    
+    if len(res) == 0:
+        return "Didint work little bro"
+    
+    res_img = cur.execute(f"SELECT Url FROM ProductImages WHERE fk_ProdId = {product_id}").fetchall()
+    product_data = {"Name": res[0][0], "Price": res[0][1], "Description": res[0][2], "Stock": res[0][3], "Images":[]}
+    for img in res_img:
+        product_data["Images"].append(img[0])
+    print(res_img)
+    
+    con.close()
+    
+    return render_template("product_page.html", categories=categories, current_user=flask_login.current_user, p_data= product_data)
+    
 # DB connection tests
 @app.route("/db_products")
 def db_products():

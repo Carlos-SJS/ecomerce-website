@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %} {{title}} {% endblock %}
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('.static', filename='CSS/product_page.css') }}">
+{% endblock %}
+{% block scripts %}
+    <script src="{{ url_for('.static', filename='JS/product_page.js') }}"></script>
+{% endblock %}
+
+
+{% block content %}
+    <div class="main-container">
+        <div class="column">
+            <div id="image-gallery">
+                {% if p_data["Images"]|length > 1 %}
+                <div id="thumbnail-column">
+                    {% for img in p_data["Images"] %}
+                        <img class="thumbnail" src="{{img}}" onclick="changeMainImage('{{img}}')">
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div id="main-image">
+                    <img src="{{p_data['Images'][0]}}" id="main-img">
+                </div>
+            </div>
+        </div>
+        <div class="column">
+            <h1>{{p_data["Name"]}}</h1>
+            <p>{{p_data["Description"]}}</p>
+        </div>
+        <div class="column">
+            <h1>${{p_data["Price"]}}</h1>
+            <h4>{{p_data["Stock"]}} in stock</h4>
+            <button>Add to cart</button>
+        </div>
+    </div>
+{% endblock %}
