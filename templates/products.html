@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %} Index {% endblock %}
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('.static', filename='CSS/product_grid.css') }}">
+{% endblock %}
+{% block content %}
+    <div class="product_grid">
+        <ul class="product_list list">
+            {% for product in products %}
+                <li class="product_item">
+                    <!-- <div class="product_sale">
+                        <p>On Sale</p>
+                    </div><-->
+                    <div class="product_image">
+                    <a href="#"><img src="{{product["Images"][0]}}" alt=""></a>
+                        <div class="product_buttons">
+                            <button class="product_heart"><i class="fa fa-heart"></i></button>
+                            <button class="product_compare"><i class="fa fa-random"></i></button>
+                            <button class="add_to_cart"><i class="fa fa-shopping-cart"></i></button>
+                            <div class="quick_view">
+                                <a href="#"><h6>Quick View</h6></a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="product_values">
+                        <div class="product_title">
+                            <h5>{{product["Name"]}}</h5>
+                        </div>
+                        <div class="product_price">
+                            <a href="#">$<span class="price_new">{{product["Price"]}}</span></a>
+                            <span class="product_rating"></span>
+                        </div>
+                        <div class="product_desc">
+                            <p class="truncate">{{product["Description"]}}</p>
+                        </div>
+                        <div class="product_buttons">
+                            <button class="product_heart"><i class="fa fa-heart"></i></button>
+                            <button class="product_compare"><i class="fa fa-random"></i></button>
+                            <button class="add_to_cart"><i class="fa fa-shopping-cart"></i></button>
+                        </div>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}

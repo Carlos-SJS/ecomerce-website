@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>{% block title %} {% endblock %}</title>
+    {% block styles %} {% endblock %}
+    <link rel="stylesheet" href="{{ url_for('.static', filename='CSS/navbar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('.static', filename='CSS/searchbar.css') }}">
+
+    <script src="{{ url_for('.static', filename='JS/searchbar.js') }}"></script>
+  </head>
+
+  <body>
+    <div class="navbar">
+			<a class="active" href="{{url_for('main_page')}}">Inicio</a>
+			<div class="dropdown">
+				<button class="dropbtn" onclick="location.href='{{url_for('products_page')}}';">Products
+					<i class="fa fa-caret-down"></i>
+				</button>
+				<div class="dropdown-content">
+					{% for category in categories %}
+            <a href="{{ url_for('products_page') }}?Category={{ category }}">{{ category }}</a>
+          {% endfor %}
+				</div>
+			</div>
+
+      <div class="wrap">
+        <div class="search">
+           <input type="text" class="searchTerm" id="search_field" placeholder="¿Qué estas buscando?">
+           <button type="submit" class="searchButton" onclick="search()">
+            <img src="https://www.svgrepo.com/show/55048/search.svg">
+          </button>
+        </div>
+     </div>
+
+      {% if current_user.is_anonymous %}
+        <div class="dropdown" style="float:right">
+          <button class="dropbtn" onclick="location.href='{{url_for('login')}}';">SignUp/Login
+            <i class="fa fa-caret-down"></i>
+          </button>
+        </div>
+      {% else %}
+        <div class="dropdown" style="float:right">
+          <button class="dropbtn">{{current_user.name}}
+            <i class="fa fa-caret-down"></i>
+          </button>
+          <div class="dropdown-content">
+              <a href="{{url_for('logout')}}">Logout</a>
+          </div>
+        </div>
+      {% endif %}
+		</div>
+
+    {% block content %}
+    {% endblock %}
+  </body>
+  {% block scripts %} {% endblock %}
+</html>
