@@ -3,3 +3,4 @@ Include
 Lib/site-packages
 Lib
 Scripts
+pyvenv.cfg

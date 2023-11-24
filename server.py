@@ -96,7 +96,33 @@ def product_page():
     con.close()
     
     return render_template("product_page.html", categories=categories, current_user=flask_login.current_user, p_data= product_data)
+
+@app.route("/mycart")
+def cart_page():
+    user = flask_login.current_user
+    if user.is_anonymous:
+        return "You must be loged in to acces this page"
     
+    
+    con = sql.connect("amazon.db")
+    cur = con.cursor()
+    cart_id = cur.execute(f"SELECT Id FROM Carts WHERE UserId = {user.id}").fetchall()[0][0]
+    p_ids = cur.execute(f"SELECT productId FROM CartProducts WHERE cartId = {cart_id}").fetchall()
+    
+    if len(p_ids) == 0:
+        return "Your cart is empty bro" 
+
+    products = []
+    for prod in p_ids:
+        res = cur.execute(f"SELECT * FROM Products WHERE Id={prod[0]}").fetchall()
+        products.append(res[0])
+
+    print(products)
+
+    print(p_ids)
+
+
+    return "siu"
 # DB connection tests
 @app.route("/db_products")
 def db_products():
