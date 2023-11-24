@@ -1,13 +1,14 @@
-from flask import Flask, request, redirect, url_for, render_template
+from flask import Flask, request, redirect, url_for, render_template, abort
 from flask_login import LoginManager, UserMixin
 import flask_login
 import sqlite3 as sql
 from werkzeug.security import generate_password_hash, check_password_hash, safe_join
 
 categories = []
+db_file = "amazon.db"
 
 def load_data():
-    con = sql.connect("amazon.db")
+    con = sql.connect(db_file)
     cur = con.cursor()
 
     res = cur.execute("SELECT Name FROM Categories").fetchall()
@@ -34,7 +35,7 @@ def main_page():
 
 @app.route("/products")
 def products_page():
-    con = sql.connect("amazon.db")
+    con = sql.connect(db_file)
     cur = con.cursor()
     
     f_category = ""
@@ -79,7 +80,7 @@ def products_page():
 def product_page():
     product_id = request.args["id"]
     
-    con = sql.connect("amazon.db")
+    con = sql.connect(db_file)
     cur = con.cursor()
     
     res = cur.execute(f"SELECT Name, Price, Description, StockSize FROM Products WHERE Id = {product_id}").fetchall()
@@ -91,7 +92,6 @@ def product_page():
     product_data = {"Name": res[0][0], "Price": res[0][1], "Description": res[0][2], "Stock": res[0][3], "Images":[]}
     for img in res_img:
         product_data["Images"].append(img[0])
-    print(res_img)
     
     con.close()
     
@@ -104,29 +104,51 @@ def cart_page():
         return "You must be loged in to acces this page"
     
     
-    con = sql.connect("amazon.db")
+    con = sql.connect(db_file)
     cur = con.cursor()
-    cart_id = cur.execute(f"SELECT Id FROM Carts WHERE UserId = {user.id}").fetchall()[0][0]
-    p_ids = cur.execute(f"SELECT productId FROM CartProducts WHERE cartId = {cart_id}").fetchall()
+    cart_data = cur.execute(f"SELECT Id, Price FROM Carts WHERE UserId = {user.id}").fetchall()[0]
+    p_ids = cur.execute(f"SELECT productId, Count FROM CartProducts WHERE cartId = {cart_data[0]}").fetchall()
     
     if len(p_ids) == 0:
         return "Your cart is empty bro" 
 
     products = []
     for prod in p_ids:
-        res = cur.execute(f"SELECT * FROM Products WHERE Id={prod[0]}").fetchall()
-        products.append(res[0])
+        res = cur.execute(f"SELECT Id, Name, Description, Price FROM Products WHERE Id={prod[0]}").fetchall()
+        img = cur.execute(f"SELECT url FROM ProductImages WHERE fk_ProdId = {prod[0]} LIMIT 1").fetchall()[0][0]
+        products.append({"id": res[0][0], "name": res[0][1], "description": res[0][2], "price": res[0][3]*prod[1], "count": prod[1], "image": img})
 
-    print(products)
-
-    print(p_ids)
-
-
-    return "siu"
+    return render_template("cart_page.html", categories=categories, current_user=flask_login.current_user, products=products, total=cart_data[1])
+    
+@app.route('/addtocart', methods=['POST'])
+def add_to_cart():
+    user = flask_login.current_user
+    if user.is_anonymous:
+        abort(401, 'Unauthorized: Bad Authentication')
+        
+    product_id = request.form.get("productid")
+    count = int(request.form.get("count"))
+    
+    con = sql.connect(db_file)
+    cur = con.cursor()
+    
+    cart_id = cur.execute(f"SELECT Id FROM Carts WHERE UserId = {user.id}").fetchall()[0][0]
+    
+    res = cur.execute(f"SELECT Count FROM CartProducts WHERE CartId = {cart_id} AND ProductId = {product_id}").fetchall()
+    if len(res) == 0:
+        cur.execute(f"INSERT INTO CartProducts(CartId, ProductId, Count) VALUES({cart_id}, {product_id}, {count})")
+    else:
+        cur.execute(f"UPDATE CartProducts SET Count = Count + {count} WHERE ProductId = {product_id} AND CartId = {cart_id}")
+    
+    prod_price = cur.execute(f"SELECT Price FROM Products WHERE Id = {product_id}").fetchall()[0][0]
+    cur.execute(f"UPDATE Carts SET Price = Price + {count * prod_price} WHERE Id = {cart_id}")
+    con.commit()
+    
+    return "200-OK"
 # DB connection tests
 @app.route("/db_products")
 def db_products():
-    con = sql.connect("amazon.db")
+    con = sql.connect(db_file)
     cur = con.cursor()
 
     res = cur.execute("SELECT * FROM Products").fetchall()
@@ -168,7 +190,7 @@ def db_insert_submit():
     if name is None or price is None or stock is None:
         return "<p>There was an error processing the insert querry into the database</p>"
     
-    con = sql.connect("amazon.db")
+    con = sql.connect(db_file)
     cur = con.cursor()
 
     res = cur.execute(f"INSERT INTO Products(Name, Price, StockSize) VALUES(\"{name}\", {price}, {stock})").fetchall()
@@ -197,7 +219,7 @@ class User(UserMixin):
         return f"<User {self.email}>"
 
 def get_user(email):
-    con = sql.connect("amazon.db")
+    con = sql.connect(db_file)
     cur = con.cursor()
 
     res = cur.execute(f"SELECT * from Users where Email = \"{email}\"").fetchall()
@@ -207,7 +229,7 @@ def get_user(email):
     return None
 
 def create_user(username, email, password):
-    con = sql.connect("amazon.db")
+    con = sql.connect(db_file)
     cur = con.cursor()
 
     res = cur.execute(f"SELECT * from Users where Email = \"{email}\"").fetchall()
@@ -229,7 +251,7 @@ def create_user(username, email, password):
 
 @login_manager.user_loader
 def load_user(user_id):
-    con = sql.connect("amazon.db")
+    con = sql.connect(db_file)
     cur = con.cursor()
 
     res = cur.execute(f"SELECT * from Users where Id = {user_id}").fetchall()

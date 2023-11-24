@@ -32,7 +32,9 @@
         <div class="column">
             <h1>${{p_data["Price"]}}</h1>
             <h4>{{p_data["Stock"]}} in stock</h4>
-            <button>Add to cart</button>
+            {% if not current_user.is_anonymous %}
+            <button onclick="addToCart()">Add to cart</button>
+            {% endif %}
         </div>
     </div>
 {% endblock %}

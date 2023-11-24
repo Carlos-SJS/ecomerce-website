@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %} Mi Carrito {% endblock %}
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('.static', filename='CSS/list_containers.css') }}">
+{% endblock %}
+{% block scripts %}
+    <script src="{{ url_for('.static', filename='JS/product_redirect.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+    <h1>Mi Carrito   ($ {{total}})</h1>
+    {% for prod in products%}
+        <div class="list" onclick="redirectProduct({{prod['id']}})">
+            <div class="list-container">
+                <img src="{{prod['image']}}">
+                <span> {{prod['name']}} </span>
+                <p> Cantidad: {{prod['count']}}  Precio: ${{prod['price']}} </p>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}
+
