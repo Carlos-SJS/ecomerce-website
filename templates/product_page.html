@@ -5,7 +5,19 @@
     <link rel="stylesheet" href="{{ url_for('.static', filename='CSS/product_page.css') }}">
 {% endblock %}
 {% block scripts %}
-    <script src="{{ url_for('.static', filename='JS/product_page.js') }}"></script>
+    <script src="{{ url_for('.static', filename='JS/product_page.js') }}"></script>\
+    <script>
+        var count_input = document.getElementById('cart_count');
+        count_input.addEventListener('blur', function() {
+            var count  = parseInt(count_input.value, 10);
+
+            if(isNaN(count)){
+                count_input.value = 1;
+            }else{
+                count_input.value = Math.max(Math.min(count, {{p_data['Stock']}}), 1);
+            }
+        });
+    </script>
 {% endblock %}
 
 
@@ -33,7 +45,12 @@
             <h1>${{p_data["Price"]}}</h1>
             <h4>{{p_data["Stock"]}} in stock</h4>
             {% if not current_user.is_anonymous %}
-            <button onclick="addToCart()">Add to cart</button>
+            <div class="number-input-container">
+                <button id="decrementButton" class="btn-down" onclick="decrement()">-</button>
+                <input type="text" class="number-input" id="cart_count" value="1">
+                <button class="btn-up" onclick="increment({{p_data['CartMax']}})">+</button>
+            </div>
+            <button class = "addtocart" onclick="addToCart()">Add to cart</button>
             {% endif %}
         </div>
     </div>

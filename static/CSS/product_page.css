@@ -27,7 +27,7 @@ body {
     border-radius: 4px;
 }
 
-.column button {
+.addtocart{
     display: block;
     margin-top: 10px;
     padding: 10px;
@@ -75,4 +75,39 @@ body {
     height: auto;
     border: 2px solid #ddd;
     border-radius: 5px;
+}
+
+/* Style the container for the number input */
+.number-input-container {
+    display: flex;
+    align-items: center;
+}
+
+/* Style the input field */
+.number-input {
+    width: 50px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+}
+
+/* Style the up and down buttons */
+.btn-up,
+.btn-down {
+    background-color: #4CAF50;
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Add some margin to the buttons */
+.btn-up {
+    margin-left: 5px;
+}
+
+.btn-down {
+    margin-right: 5px;
 }

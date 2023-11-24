@@ -88,8 +88,15 @@ def product_page():
     if len(res) == 0:
         return "Didint work little bro"
     
+    user = flask_login.current_user
     res_img = cur.execute(f"SELECT Url FROM ProductImages WHERE fk_ProdId = {product_id}").fetchall()
     product_data = {"Name": res[0][0], "Price": res[0][1], "Description": res[0][2], "Stock": res[0][3], "Images":[]}
+    
+    if not user.is_anonymous:
+        cart_id = cur.execute(f"SELECT Id FROM Carts WHERE UserId = {user.id}").fetchall()[0][0]
+        count_in_cart = cur.execute(f"SELECT Count FROM CartProducts WHERE ProductId = {product_id} AND CartId = {cart_id}").fetchall()
+        if len(count_in_cart) > 0:
+            product_data["CartMax"]=product_data["Stock"]-count_in_cart[0][0]    
     for img in res_img:
         product_data["Images"].append(img[0])
     
@@ -133,14 +140,17 @@ def add_to_cart():
     cur = con.cursor()
     
     cart_id = cur.execute(f"SELECT Id FROM Carts WHERE UserId = {user.id}").fetchall()[0][0]
+    prod_data = cur.execute(f"SELECT Price, StockSize FROM Products WHERE Id = {product_id}").fetchall()
     
     res = cur.execute(f"SELECT Count FROM CartProducts WHERE CartId = {cart_id} AND ProductId = {product_id}").fetchall()
     if len(res) == 0:
+        count = min(count, prod_data[0][1])
         cur.execute(f"INSERT INTO CartProducts(CartId, ProductId, Count) VALUES({cart_id}, {product_id}, {count})")
     else:
+        count = min(count, prod_data[0][1] - cur.execute(f"SELECT Count FROM CartProducts WHERE ProductId = {product_id} AND CartId = {cart_id}").fetchall()[0][0])
         cur.execute(f"UPDATE CartProducts SET Count = Count + {count} WHERE ProductId = {product_id} AND CartId = {cart_id}")
     
-    prod_price = cur.execute(f"SELECT Price FROM Products WHERE Id = {product_id}").fetchall()[0][0]
+    prod_price = prod_data[0][0]
     cur.execute(f"UPDATE Carts SET Price = Price + {count * prod_price} WHERE Id = {cart_id}")
     con.commit()
     
