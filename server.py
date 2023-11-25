@@ -96,7 +96,10 @@ def product_page():
         cart_id = cur.execute(f"SELECT Id FROM Carts WHERE UserId = {user.id}").fetchall()[0][0]
         count_in_cart = cur.execute(f"SELECT Count FROM CartProducts WHERE ProductId = {product_id} AND CartId = {cart_id}").fetchall()
         if len(count_in_cart) > 0:
-            product_data["CartMax"]=product_data["Stock"]-count_in_cart[0][0]    
+            product_data["CartMax"]=product_data["Stock"]-count_in_cart[0][0]
+        else:
+            product_data["CartMax"]=product_data["Stock"]   
+
     for img in res_img:
         product_data["Images"].append(img[0])
     
