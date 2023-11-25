@@ -13,7 +13,7 @@
     {% for prod in products%}
         <div class="list" onclick="redirectProduct({{prod['id']}})">
             <div class="list-container">
-                <img src="{{prod['image']}}">
+                <img src="{{url_for('static', filename="uploads/" + prod["image"])}}">
                 <span> {{prod['name']}} </span>
                 <p> Cantidad: {{prod['count']}}  Precio: ${{prod['price']}} </p>
             </div>

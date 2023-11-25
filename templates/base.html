@@ -26,6 +26,17 @@
 				</div>
 			</div>
 
+      {% if (not (current_user.is_anonymous)) and current_user.is_seller %}
+      <div class="dropdown">
+				<button class="dropbtn" onclick="location.href='';">Seller
+					<i class="fa fa-caret-down"></i>
+				</button>
+				<div class="dropdown-content">
+            <a href="{{ url_for('create_product') }}">Create a product</a>
+				</div>
+			</div>
+      {% endif %}
+
       <div class="wrap">
         <div class="search">
            <input type="text" class="searchTerm" id="search_field" placeholder="¿Qué estas buscando?">

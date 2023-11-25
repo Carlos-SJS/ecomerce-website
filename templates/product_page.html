@@ -3,9 +3,13 @@
 {% block title %} {{title}} {% endblock %}
 {% block styles %}
     <link rel="stylesheet" href="{{ url_for('.static', filename='CSS/product_page.css') }}">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
 {% endblock %}
 {% block scripts %}
-    <script src="{{ url_for('.static', filename='JS/product_page.js') }}"></script>\
+    <script src="{{ url_for('.static', filename='JS/product_page.js') }}"></script>
+    <script src="{{ url_for('.static', filename='JS/toastr.js') }}"></script>
     <script>
         var count_input = document.getElementById('cart_count');
         count_input.addEventListener('blur', function() {
@@ -28,12 +32,12 @@
                 {% if p_data["Images"]|length > 1 %}
                 <div id="thumbnail-column">
                     {% for img in p_data["Images"] %}
-                        <img class="thumbnail" src="{{img}}" onclick="changeMainImage('{{img}}')">
+                        <img class="thumbnail" src="{{url_for('static', filename="uploads/" + img)}}" onclick="changeMainImage('{{url_for('static', filename="uploads/" + img)}}')">
                     {% endfor %}
                 </div>
                 {% endif %}
                 <div id="main-image">
-                    <img src="{{p_data['Images'][0]}}" id="main-img">
+                    <img src="{{url_for('static', filename="uploads/" + p_data["Images"][0])}}" id="main-img">
                 </div>
             </div>
         </div>
@@ -48,7 +52,7 @@
             <div class="number-input-container">
                 <button id="decrementButton" class="btn-down" onclick="decrement()">-</button>
                 <input type="text" class="number-input" id="cart_count" value="1">
-                <button class="btn-up" onclick="increment({{p_data['CartMax']}})">+</button>
+                <button class="btn-up" onclick="increment({{p_data['CartMax']}})" id="addtocart">+</button>
             </div>
             <button class = "addtocart" onclick="addToCart()">Add to cart</button>
             {% endif %}

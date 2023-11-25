@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %} Crea un producto {% endblock %}
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('.static', filename='CSS/create_product.css') }}">
+    <link rel="stylesheet" href="{{ url_for('.static', filename='CSS/product_page.css') }}">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+{% endblock %}
+{% block scripts %}
+    <script src="{{ url_for('.static', filename='JS/create_product.js') }}"></script>
+    <script src="{{ url_for('.static', filename='JS/toastr.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+    <div class="main-container">
+        <div class="column">
+            <div id="drop-area" ondrop="dropHandler(event)" ondragover="dragOverHandler(event)">
+                <p>Drag & drop an image here or click to select one</p>
+            </div>
+            <div id="image-gallery">
+                <div id="thumbnail-column">
+                </div>
+                <div id="main-image">
+                </div>
+            </div>
+        </div>
+        <div class="column">
+            <input id="ProdName" placeholder="Nombre del producto" style="font-size: large;">
+            <textarea id="ShortDescription" placeholder="Descripción corta" style="height: 50px;"></textarea>
+            <textarea id="FullDescription" placeholder="Descripción completa" style="height: 300px;"></textarea> 
+        </div>
+        <div class="column">
+            <p>$<input id="ProdPrice" placeholder="Precio" style="font-size: large;"></p>
+            <input id="ProdStock" placeholder="Stock" style="font-size: large;">
+        </div>
+    </div>
+    <button class="addtocart" style="margin: auto;" onclick="createProduct()">Crear Producto</button>
+{% endblock %}
+

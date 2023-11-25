@@ -1,0 +1,30 @@
+#drop-area {
+    border: 2px dashed #ccc;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    width: 80%;
+    margin: auto;
+}
+
+#image-preview {
+    max-width: 100%;
+    max-height: 300px;
+    margin-top: 20px;
+}
+
+input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px; /* Adjust the value to change the roundness */
+    margin-bottom: 10px;
+}
+
+textarea {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    resize: vertical; /* Allows vertical resizing */
+    font-size: medium;
+    width: 80%;
+}

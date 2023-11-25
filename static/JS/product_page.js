@@ -19,6 +19,8 @@ function addToCart(){
     },
     body: data
     })
+
+    toastr.success('El producto ha sido añadido a tu carrito ');
 }
 
 function increment(max_count) {

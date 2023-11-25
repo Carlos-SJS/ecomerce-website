@@ -3,6 +3,7 @@ from flask_login import LoginManager, UserMixin
 import flask_login
 import sqlite3 as sql
 from werkzeug.security import generate_password_hash, check_password_hash, safe_join
+import os
 
 categories = []
 db_file = "amazon.db"
@@ -27,6 +28,7 @@ login_manager = LoginManager(app)
 #Main page
 @app.route("/")
 def main_page():
+    print(flask_login.current_user.is_seller)
     if flask_login.current_user.is_anonymous:
         print("The user is not logged in")
     else:
@@ -158,6 +160,54 @@ def add_to_cart():
     con.commit()
     
     return "200-OK"
+
+@app.route('/upload_image', methods=['POST'])
+@flask_login.login_required
+def upload_image():
+    if 'file' not in request.files:
+        return 'No file part'
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return 'No selected file'
+
+    if file:
+        filename = os.path.join("static/uploads", file.filename)
+        file.save(filename)
+        return 'File uploaded successfully'
+
+@app.route("/create_product", methods=['GET', 'POST'])
+@flask_login.login_required
+def create_product():
+    user = flask_login.current_user
+    if not user.is_seller:
+        return "You do not have permission to be here kido"
+    
+    if request.method == 'GET':
+        return render_template("add_product.html" )
+    
+    p_name = request.form.get('name')
+    p_sdesc = request.form.get('short_desc')
+    p_fdesc = request.form.get('full_desc')
+    price = float(request.form.get('price'))
+    stock = int(request.form.get('stock'))
+    images = request.form.getlist('image')
+    
+    con = sql.connect(db_file)
+    cur = con.cursor()
+    
+    cur.execute(f"INSERT INTO Products(Name, Price, Description, StockSize) VALUES (\"{p_name}\", {price}, \"{p_sdesc}\", {stock})")
+    new_pid =  cur.execute("SELECT last_insert_rowid()").fetchall()[0][0]
+
+    for img in images:
+        cur.execute(f"INSERT INTO ProductImages(fk_ProdId, url) VALUES ({new_pid}, \"{img}\")")
+    
+    con.commit()
+    con.close()
+    
+    return "200-OK"
+    
 # DB connection tests
 @app.route("/db_products")
 def db_products():
@@ -216,11 +266,13 @@ def db_insert_submit():
 
 #login shit
 class User(UserMixin):
-    def __init__(self, id, name, email, password):
+    def __init__(self, id, name, email, password, is_seller = False, seller_id = None):
         self.id = id
         self.name = name
         self.email = email
         self.password = password
+        self.is_seller = is_seller
+        self.seller_id = seller_id
         
     def set_password(self, password):
         self.password = generate_password_hash(password)
@@ -236,8 +288,13 @@ def get_user(email):
     cur = con.cursor()
 
     res = cur.execute(f"SELECT * from Users where Email = \"{email}\"").fetchall()
+    s_res = cur.execute(f"SELECT Id FROM Seller WHERE UserId = {res[0][0]}").fetchall()
+    print(s_res)
     if(len(res) > 0):
-        return User(str(res[0][0]), res[0][1], res[0][2], res[0][3])
+        if(len(s_res) == 0):
+            return User(str(res[0][0]), res[0][1], res[0][2], res[0][3])
+        else:
+            return User(str(res[0][0]), res[0][1], res[0][2], res[0][3], is_seller=True, seller_id=s_res[0][0])
 
     return None
 
@@ -258,18 +315,20 @@ def create_user(username, email, password):
     con.close()
 
     return True
-    
-    
-    
 
 @login_manager.user_loader
 def load_user(user_id):
     con = sql.connect(db_file)
     cur = con.cursor()
 
-    res = cur.execute(f"SELECT * from Users where Id = {user_id}").fetchall()
+    res = cur.execute(f"SELECT * from Users where Id = \"{user_id}\"").fetchall()
+    s_res = cur.execute(f"SELECT Id FROM Seller WHERE UserId = {res[0][0]}").fetchall()
+    print(s_res)
     if(len(res) > 0):
-        return User(str(res[0][0]), res[0][1], res[0][2], res[0][3])
+        if(len(s_res) == 0):
+            return User(str(res[0][0]), res[0][1], res[0][2], res[0][3])
+        else:
+            return User(str(res[0][0]), res[0][1], res[0][2], res[0][3], is_seller=True, seller_id=s_res[0][0])
 
     return None
 
