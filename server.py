@@ -6,13 +6,13 @@ from werkzeug.security import generate_password_hash, check_password_hash, safe_
 import os
 
 categories = []
-db_file = "amazon.db"
+db_file = "gennady_store.db"
 
 def load_data():
     con = sql.connect(db_file)
     cur = con.cursor()
 
-    res = cur.execute("SELECT Name FROM Categories").fetchall()
+    res = cur.execute("SELECT Categoria FROM Categoria GROUP BY Categoria").fetchall()
     for ct in res:
         categories.append(ct[0])
         
@@ -28,13 +28,11 @@ login_manager = LoginManager(app)
 #Main page
 @app.route("/")
 def main_page():
-    print(flask_login.current_user.is_seller)
     if flask_login.current_user.is_anonymous:
         print("The user is not logged in")
     else:
         print(f"The user is {flask_login.current_user.name}")
-    return render_template("hello_world.html", title="Mamazon", content="<p>Hello world</p>", categories=categories, create_user=flask_login.current_user)
-
+    return render_template("basic_page.html", title="Gennady.Store", main_message="Bienvenido a Gennady.Store", secondary_message="La mejor tienda para los verdaderos ICPCerdos")
 @app.route("/products")
 def products_page():
     con = sql.connect(db_file)
@@ -42,19 +40,13 @@ def products_page():
     
     f_category = ""
     if "Category" in request.args:
-        for cat in request.args.getlist("Category"):
-            res = cur.execute(f"SELECT Id FROM Categories WHERE Name = \"{cat}\"").fetchall()
-            if len(res) == 0:
-                continue
-            
-            cat_id = res[0][0]
-            
-            f_category += (" AND " if f_category != "" else "") + f"Id IN (SELECT ProductID FROM product_category WHERE CategoryId = {cat_id})"
+        for cat in request.args.getlist("Category"):            
+            f_category += (" AND " if f_category != "" else "") + f"ID IN (SELECT ID_Producto FROM Categoria WHERE Categoria = \"{cat}\" COLLATE NOCASE)"
     
     f_search = ""
     if "Search" in request.args: 
         search_q = request.args.get("Search")
-        f_search = f"((Name LIKE \"%{search_q}%\" COLLATE NOCASE) OR (Description LIKE \"%{search_q}%\" COLLATE NOCASE))"
+        f_search = f"((Nombre LIKE \"%{search_q}%\" COLLATE NOCASE) OR (Descripcion LIKE \"%{search_q}%\" COLLATE NOCASE))"
     f_category = "" if f_category == "" else f"({f_category})"
     
     filter_joined = ""
@@ -62,15 +54,14 @@ def products_page():
         join_str = " AND " if f_category != "" and f_search != "" else ""
         filter_joined = " WHERE " + f_search + join_str + f_category + ";"
     
-    print("SELECT Name, Price, Description, Id FROM PRODUCTS"+filter_joined)
-    res = cur.execute("SELECT Name, Price, Description, Id FROM PRODUCTS"+filter_joined).fetchall()
+    res = cur.execute("SELECT Nombre, Precio, Descripcion, ID FROM Producto"+filter_joined).fetchall()
     
     products = []
     #res = cur.execute("SELECT Name, Price, Description, ProductId FROM Products").fetchall()
     for prod in res:
         products.append({"Name": prod[0], "Price": prod[1], "Description": prod[2],"Images": [], "pId": prod[3]})
         
-        imgs = cur.execute(f"SELECT url FROM ProductImages WHERE fk_ProdId = {prod[3]}")
+        imgs = cur.execute(f"SELECT Imagen FROM Imagenes_Producto WHERE ID_Producto = {prod[3]}")
         for img in imgs:
             products[-1]["Images"].append(img[0])
         
@@ -85,18 +76,18 @@ def product_page():
     con = sql.connect(db_file)
     cur = con.cursor()
     
-    res = cur.execute(f"SELECT Name, Price, Description, StockSize FROM Products WHERE Id = {product_id}").fetchall()
+    res = cur.execute(f"SELECT Nombre, Precio, Descripcion, Stock, Descripcion_Larga, Vendedor FROM Producto WHERE ID = {product_id}").fetchall()
     
     if len(res) == 0:
         return "Didint work little bro"
     
     user = flask_login.current_user
-    res_img = cur.execute(f"SELECT Url FROM ProductImages WHERE fk_ProdId = {product_id}").fetchall()
-    product_data = {"Name": res[0][0], "Price": res[0][1], "Description": res[0][2], "Stock": res[0][3], "Images":[]}
+    res_img = cur.execute(f"SELECT Imagen FROM Imagenes_Producto WHERE ID_Producto = {product_id}").fetchall()
+    product_data = {"Name": res[0][0], "Price": res[0][1], "Description": res[0][2], "Full_Description": res[0][4], "Seller": res[0][5], "Stock": res[0][3], "Images":[]}
     
     if not user.is_anonymous:
-        cart_id = cur.execute(f"SELECT Id FROM Carts WHERE UserId = {user.id}").fetchall()[0][0]
-        count_in_cart = cur.execute(f"SELECT Count FROM CartProducts WHERE ProductId = {product_id} AND CartId = {cart_id}").fetchall()
+        cart_id = cur.execute(f"SELECT ID FROM Carrito WHERE Usuario = {user.id}").fetchall()[0][0]
+        count_in_cart = cur.execute(f"SELECT Count FROM Lista_Productos_Carrito WHERE ID_Producto = {product_id} AND ID_Carrito = {cart_id}").fetchall()
         if len(count_in_cart) > 0:
             product_data["CartMax"]=product_data["Stock"]-count_in_cart[0][0]
         else:
@@ -113,25 +104,74 @@ def product_page():
 def cart_page():
     user = flask_login.current_user
     if user.is_anonymous:
-        return "You must be loged in to acces this page"
+        return render_template("basic_page.html", title="Mi carrito", main_message="<You must be loged in to acces this page")
     
     
     con = sql.connect(db_file)
     cur = con.cursor()
-    cart_data = cur.execute(f"SELECT Id, Price FROM Carts WHERE UserId = {user.id}").fetchall()[0]
-    p_ids = cur.execute(f"SELECT productId, Count FROM CartProducts WHERE cartId = {cart_data[0]}").fetchall()
+    cart_data = cur.execute(f"SELECT ID, Total FROM Carrito WHERE Usuario = {user.id}").fetchall()[0]
+    p_ids = cur.execute(f"SELECT ID_Producto, Count FROM Lista_Productos_Carrito WHERE ID_Carrito = {cart_data[0]}").fetchall()
     
     if len(p_ids) == 0:
-        return "Your cart is empty bro" 
+        return render_template("basic_page.html", title="Mi carrito", main_message="Tu carrito esta vacio!", secondary_message="Visita la página de productos para llenar tu carrito")
 
     products = []
     for prod in p_ids:
-        res = cur.execute(f"SELECT Id, Name, Description, Price FROM Products WHERE Id={prod[0]}").fetchall()
-        img = cur.execute(f"SELECT url FROM ProductImages WHERE fk_ProdId = {prod[0]} LIMIT 1").fetchall()[0][0]
+        res = cur.execute(f"SELECT ID, Nombre, Descripcion, Precio FROM Producto WHERE ID={prod[0]}").fetchall()
+        img = cur.execute(f"SELECT Imagen FROM Imagenes_Producto WHERE ID_Producto = {prod[0]} LIMIT 1").fetchall()[0][0]
         products.append({"id": res[0][0], "name": res[0][1], "description": res[0][2], "price": res[0][3]*prod[1], "count": prod[1], "image": img})
 
     return render_template("cart_page.html", categories=categories, current_user=flask_login.current_user, products=products, total=cart_data[1])
+
+@app.route("/my_orders")
+@flask_login.login_required
+def orders_page():
+    user = flask_login.current_user   
     
+    con = sql.connect(db_file)
+    cur = con.cursor()
+    orders_data = cur.execute(f"SELECT ID, Total FROM Ordenes WHERE Usuario = {user.id}").fetchall()
+    
+    orders = []
+    for order in orders_data:
+        prods = cur.execute(f"Select ID_Producto, Count FROM Lista_Productos_Orden WHERE ID_Orden = {order[0]}").fetchall()
+        order_d = {"price": order[1], "products": []}
+        for p in prods:
+            p_dat = cur.execute(f"SELECT Nombre, Precio FROM Producto WHERE ID = {p[0]}").fetchall()[0]
+            img = cur.execute(f"SELECT Imagen FROM Imagenes_Producto WHERE ID_Producto = {p[0]}").fetchall()[0][0]
+            prod = {"count": p[1], "image": img, "name": p_dat[0], "price": p_dat[1]*p[1], "id": p[0]}
+            
+            order_d["products"].append(prod)
+        orders.append(order_d)
+        print(order_d["products"])
+
+    return render_template("orders_page.html", categories=categories, current_user=flask_login.current_user, orders=orders)
+    
+@app.route("/seller")
+@flask_login.login_required
+def seller_page():
+    user = flask_login.current_user
+    if not user.is_seller:
+        return "Bad auth"
+    
+    con = sql.connect(db_file)
+    cur = con.cursor()
+    
+    res = cur.execute(f"SELECT Nombre, Precio, Descripcion, ID FROM Producto WHERE Vendedor = {user.seller_id}").fetchall()
+    
+    products = []
+    #res = cur.execute("SELECT Name, Price, Description, ProductId FROM Products").fetchall()
+    for prod in res:
+        products.append({"Name": prod[0], "Price": prod[1], "Description": prod[2],"Images": [], "pId": prod[3]})
+        
+        imgs = cur.execute(f"SELECT Imagen FROM Imagenes_Producto WHERE ID_Producto = {prod[3]}")
+        for img in imgs:
+            products[-1]["Images"].append(img[0])
+        
+    con.close()
+
+    return render_template("products.html", title="Products - Mamazon", products=products, categories=categories, current_user=flask_login.current_user)    
+
 @app.route('/addtocart', methods=['POST'])
 def add_to_cart():
     user = flask_login.current_user
@@ -144,19 +184,19 @@ def add_to_cart():
     con = sql.connect(db_file)
     cur = con.cursor()
     
-    cart_id = cur.execute(f"SELECT Id FROM Carts WHERE UserId = {user.id}").fetchall()[0][0]
-    prod_data = cur.execute(f"SELECT Price, StockSize FROM Products WHERE Id = {product_id}").fetchall()
+    cart_id = cur.execute(f"SELECT ID FROM Carrito WHERE Usuario = {user.id}").fetchall()[0][0]
+    prod_data = cur.execute(f"SELECT Precio, Stock FROM Producto WHERE ID = {product_id}").fetchall()
     
-    res = cur.execute(f"SELECT Count FROM CartProducts WHERE CartId = {cart_id} AND ProductId = {product_id}").fetchall()
+    res = cur.execute(f"SELECT Count FROM Lista_Productos_Carrito WHERE ID_Carrito = {cart_id} AND ID_Producto = {product_id}").fetchall()
     if len(res) == 0:
         count = min(count, prod_data[0][1])
-        cur.execute(f"INSERT INTO CartProducts(CartId, ProductId, Count) VALUES({cart_id}, {product_id}, {count})")
+        cur.execute(f"INSERT INTO Lista_Productos_Carrito(ID_Carrito, ID_Producto, Count) VALUES({cart_id}, {product_id}, {count})")
     else:
-        count = min(count, prod_data[0][1] - cur.execute(f"SELECT Count FROM CartProducts WHERE ProductId = {product_id} AND CartId = {cart_id}").fetchall()[0][0])
-        cur.execute(f"UPDATE CartProducts SET Count = Count + {count} WHERE ProductId = {product_id} AND CartId = {cart_id}")
+        count = min(count, prod_data[0][1] - cur.execute(f"SELECT Count FROM Lista_Productos_Carrito WHERE ID_Producto = {product_id} AND ID_Carrito = {cart_id}").fetchall()[0][0])
+        cur.execute(f"UPDATE Lista_Productos_Carrito SET Count = Count + {count} WHERE ID_Producto = {product_id} AND ID_Carrito = {cart_id}")
     
     prod_price = prod_data[0][0]
-    cur.execute(f"UPDATE Carts SET Price = Price + {count * prod_price} WHERE Id = {cart_id}")
+    cur.execute(f"UPDATE Carrito SET Total = Total + {count * prod_price} WHERE ID = {cart_id}")
     con.commit()
     
     return "200-OK"
@@ -197,11 +237,11 @@ def create_product():
     con = sql.connect(db_file)
     cur = con.cursor()
     
-    cur.execute(f"INSERT INTO Products(Name, Price, Description, StockSize) VALUES (\"{p_name}\", {price}, \"{p_sdesc}\", {stock})")
+    cur.execute(f"INSERT INTO Producto(Nombre, Precio, Descripcion, Descripcion_Larga, Stock, Vendedor, Cantidad_Vendida) VALUES (\"{p_name}\", {price}, \"{p_sdesc}\", \"{p_fdesc}\", {stock}, {user.seller_id}, {0})")
     new_pid =  cur.execute("SELECT last_insert_rowid()").fetchall()[0][0]
 
     for img in images:
-        cur.execute(f"INSERT INTO ProductImages(fk_ProdId, url) VALUES ({new_pid}, \"{img}\")")
+        cur.execute(f"INSERT INTO Imagenes_Producto(ID_Producto, Imagen) VALUES ({new_pid}, \"{img}\")")
     
     con.commit()
     con.close()
@@ -214,7 +254,7 @@ def db_products():
     con = sql.connect(db_file)
     cur = con.cursor()
 
-    res = cur.execute("SELECT * FROM Products").fetchall()
+    res = cur.execute("SELECT * FROM Producto").fetchall()
     print(type(res[0]))
 
     style_sheet = "table {border-collapse: collapse;border-spacing: 0px;}table,th,td{padding: 5px;border: 1px solid black;}"
@@ -287,8 +327,8 @@ def get_user(email):
     con = sql.connect(db_file)
     cur = con.cursor()
 
-    res = cur.execute(f"SELECT * from Users where Email = \"{email}\"").fetchall()
-    s_res = cur.execute(f"SELECT Id FROM Seller WHERE UserId = {res[0][0]}").fetchall()
+    res = cur.execute(f"SELECT * from Usuario where Email = \"{email}\"").fetchall()
+    s_res = cur.execute(f"SELECT ID FROM Vendedor WHERE ID_Usuario = {res[0][0]}").fetchall()
     print(s_res)
     if(len(res) > 0):
         if(len(s_res) == 0):
@@ -302,15 +342,17 @@ def create_user(username, email, password):
     con = sql.connect(db_file)
     cur = con.cursor()
 
-    res = cur.execute(f"SELECT * from Users where Email = \"{email}\"").fetchall()
+    res = cur.execute(f"SELECT * from Usuario where Email = \"{email}\"").fetchall()
     if(len(res) > 0):
         return False
-    res = cur.execute(f"SELECT * from Users where Name = \"{username}\"").fetchall()
+    res = cur.execute(f"SELECT * from Usuario where Nombre = \"{username}\"").fetchall()
     if(len(res) > 0):
         return False
     
     password = generate_password_hash(password)
-    cur.execute(f"INSERT INTO Users(Name, Email, PasswordHash) VALUES (\"{username}\", \"{email}\", \"{password}\")")
+    cur.execute(f"INSERT INTO Usuario(Nombre, Email, Password) VALUES (\"{username}\", \"{email}\", \"{password}\")")
+    new_id = cur.execute(f"SELECT ID from Usuario where Nombre = \"{username}\"").fetchall()[0][0]
+    cur.execute(f"INSERT INTO Carrito(Usuario, Total) VALUES({new_id}, {0})")
     con.commit()
     con.close()
 
@@ -321,8 +363,8 @@ def load_user(user_id):
     con = sql.connect(db_file)
     cur = con.cursor()
 
-    res = cur.execute(f"SELECT * from Users where Id = \"{user_id}\"").fetchall()
-    s_res = cur.execute(f"SELECT Id FROM Seller WHERE UserId = {res[0][0]}").fetchall()
+    res = cur.execute(f"SELECT * from Usuario where ID = \"{user_id}\"").fetchall()
+    s_res = cur.execute(f"SELECT ID FROM Vendedor WHERE ID_Usuario = {res[0][0]}").fetchall()
     print(s_res)
     if(len(res) > 0):
         if(len(s_res) == 0):

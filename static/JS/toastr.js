@@ -16,7 +16,3 @@ $(document).ready(function() {
         'hideMethod': 'fadeOut',
     }
 });
-
-$('#addtocart').click(function(event) {
-    toastr.success('You clicked Success toast');
-});

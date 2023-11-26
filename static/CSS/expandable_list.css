@@ -1,0 +1,117 @@
+.container {
+    border: 2px solid #111111;
+    background-color: #474747;
+    border-radius: 5px;
+    padding: 16px;
+    margin: 6px 0;
+    margin-left: 10%;
+    margin-right: 10%;
+}
+.container::after {
+    content: "";
+    clear: both;
+    display: table;
+}
+.container img {
+    float: left;
+    margin-right: 20px;
+    width: 130px;
+    height: 90px;
+}
+.container span {
+    font-size: 30px;
+    margin-right: 15px;
+    color: #d7d7d7;
+    font-weight: bold;
+}
+.lower_line{
+    font-size: 20px !important; 
+    margin-right: 15px !important;
+    color: rgb(227, 145, 13)!important;
+}
+@media (max-width: 100px) {
+    .container {
+        text-align: center;
+    }
+    .container img {
+        margin: auto;
+        float: none;
+        display: block;
+    }
+    
+    .list-header{
+        text-align: center;
+    }
+    .list-header img{
+        margin: auto;
+        float: none;
+        display: block;
+    }
+}
+.container:hover {
+    background-color: rgb(226, 226, 226);
+}
+
+.container:hover span{
+    color: rgb(47, 47, 47);
+}
+
+.list-header {
+    border: 2px solid #111111;
+    background-color: #04AA6D;
+    border-radius: 5px;
+    padding: 16px;
+    margin: 16px 0 6px 0;
+    margin-left: 7%;
+    margin-right: 9%;
+}
+
+.list-header img{
+    transition: transform 0.3s ease-out;
+}
+
+.list-header::after {
+    content: "";
+    clear: both;
+    display: table;
+}
+
+.list-header span {
+    font-size: 30px;
+    margin-right: 15px;
+    color: #FFFFFF;
+    font-weight: bold;
+}
+
+.list-header:hover {
+    background-color: #236db7;
+}
+
+.list-header.show img{
+    transform: rotate(0deg);
+}
+
+.list-header.hide img{ 
+    transform: rotate(-90deg);
+}
+
+.list-header img {
+    float: left;
+    margin-right: 20px;
+    width: 35px;
+    height: 35px;
+}
+
+.list-container{
+    margin: 0;
+    overflow: hidden;
+    transition: height 0.3s ease-out;
+}
+
+.list-container.hide {
+    height: 0;
+}
+
+.list-container.show {
+    height: var(--openHeight);
+}

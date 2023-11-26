@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %} Mis ordenes {% endblock %}
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('.static', filename='CSS/expandable_list.css') }}">
+{% endblock %}
+{% block scripts %}
+    <script src="{{ url_for('.static', filename='JS/dropdown_list.js') }}"></script>
+    <script src="{{ url_for('.static', filename='JS/product_redirect.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+    {% for order in orders%}
+        <div class="list-header hide">
+            <img src="{{ url_for('.static', filename='Images/dpd_icon.png') }}">
+            <span>Orden</span>
+            <span style="margin-left: 70%;"> Total: {{order["price"]}}</span>
+        </div>
+        <div class="list-container hide">
+        {% for prod in order["products"] %}
+            <div class="list" onclick="redirectProduct({{prod['id']}})">
+                <div class="container">
+                    <img src=".{{ url_for('static', filename='uploads/'+prod["image"]) }}">
+                    <span>{{prod["name"]}}</span>
+                    <p><span class="lower_line">Cantidad: {{prod["count"]}}</span> <span class="lower_line" style="margin-left: 10%;">Precio: {{prod["price"]}}</span></p>
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+    {% endfor %}
+{% endblock %}

@@ -28,7 +28,7 @@
 
       {% if (not (current_user.is_anonymous)) and current_user.is_seller %}
       <div class="dropdown">
-				<button class="dropbtn" onclick="location.href='';">Seller
+				<button class="dropbtn" onclick="location.href='{{url_for("seller_page")}}';">Para vendedores
 					<i class="fa fa-caret-down"></i>
 				</button>
 				<div class="dropdown-content">
@@ -47,18 +47,19 @@
      </div>
 
       {% if current_user.is_anonymous %}
-        <div class="dropdown" style="float:right">
+        <div class="dropdown" style="float:right;margin-right: 25px;">
           <button class="dropbtn" onclick="location.href='{{url_for('login')}}';">SignUp/Login
             <i class="fa fa-caret-down"></i>
           </button>
         </div>
       {% else %}
-        <div class="dropdown" style="float:right">
+        <div class="dropdown" style="float:right;margin-right: 25px;">
           <button class="dropbtn">{{current_user.name}}
             <i class="fa fa-caret-down"></i>
           </button>
           <div class="dropdown-content">
             <a href="{{url_for('cart_page')}}">Mi Carrito</a>
+            <a href="{{url_for('orders_page')}}">Mis ordenes</a>
             <a href="{{url_for('logout')}}">Logout</a>
           </div>
         </div>
