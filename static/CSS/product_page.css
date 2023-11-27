@@ -9,7 +9,6 @@ body {
     display: flex;
     justify-content: space-between;
     padding: 20px;
-    background-color: #f0f0f0;
 }
 
 .column {
@@ -19,6 +18,12 @@ body {
     background-color: #ffffff;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.smoll{
+    flex-shrink: 1;
+    flex: 0;
+    min-width: 15%;
 }
 
 .column img {
@@ -110,4 +115,51 @@ body {
 
 .btn-down {
     margin-right: 5px;
+}
+
+.review-container {
+    max-width: 600px;
+    margin: 20px auto;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    border-radius: 5px;
+}
+
+.review-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.star-rating {
+    margin-bottom: 10px;
+}
+
+.star-rating input {
+    display: none;
+}
+
+.star-rating label {
+    font-size: 24px;
+    color: #ffd700;
+    cursor: pointer;
+}
+
+.review-content {
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.submit-button {
+    background-color: #4caf50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.star-rating .selected {
+    color: rgb(112, 111, 110); /* Change color for specific stars with class 'selected' */
 }

@@ -13,8 +13,8 @@
     {% for order in orders%}
         <div class="list-header hide">
             <img src="{{ url_for('.static', filename='Images/dpd_icon.png') }}">
-            <span>Orden</span>
-            <span style="margin-left: 70%;"> Total: {{order["price"]}}</span>
+            <span>Orden {{order["fecha"]}}</span>
+            <span style="margin-left: 65%;"> Total: {{order["price"]}}</span>
         </div>
         <div class="list-container hide">
         {% for prod in order["products"] %}

@@ -3,7 +3,7 @@ body, html {
     margin: 0;
     padding: 0;
     font-size: 100%;
-    background: #F5F5F5;
+    background: #e3e6e6;
     font-family: 'Titillium Web', sans-serif;
 }
 
@@ -12,7 +12,7 @@ body, html {
     overflow: hidden;
 }
 .navbar a.active {
-    background-color: #04AA6D;
+    background-color: #044b7b;
     color: white;
 }
 .dropdown button.active {
@@ -52,7 +52,7 @@ body, html {
     margin: 0;
 }
     .navbar a:hover, .dropdown:hover .dropbtn {
-    background-color: rgb(0, 117, 235);
+    background-color: #ff751d;
 }
 .dropdown-content {
     display: none;
@@ -75,4 +75,10 @@ body, html {
 }
 .dropdown:hover .dropdown-content {
     display: block;
+}
+
+.logo {
+    width: 15px;
+    height: 15px;
+    
 }

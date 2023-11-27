@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+
     <title>{% block title %} {% endblock %}</title>
     {% block styles %} {% endblock %}
     <link rel="stylesheet" href="{{ url_for('.static', filename='CSS/navbar.css') }}">
@@ -14,9 +16,11 @@
 
   <body>
     <div class="navbar">
-			<a class="active" href="{{url_for('main_page')}}">Inicio</a>
+			<a class="active" href="{{url_for('main_page')}}">
+        <img src="{{ url_for('.static', filename='gs_logo.png') }}" alt="Logo" class="logo"> Inicio
+      </a>
 			<div class="dropdown">
-				<button class="dropbtn" onclick="location.href='{{url_for('products_page')}}';">Products
+				<button class="dropbtn" onclick="location.href='{{url_for('products_page')}}';">Productos
 					<i class="fa fa-caret-down"></i>
 				</button>
 				<div class="dropdown-content">
@@ -32,7 +36,7 @@
 					<i class="fa fa-caret-down"></i>
 				</button>
 				<div class="dropdown-content">
-            <a href="{{ url_for('create_product') }}">Create a product</a>
+            <a href="{{ url_for('create_product') }}">Crear un producto</a>
 				</div>
 			</div>
       {% endif %}
@@ -53,7 +57,7 @@
           </button>
         </div>
       {% else %}
-        <div class="dropdown" style="float:right;margin-right: 25px;">
+        <div class="dropdown" style="float:right;margin-right: 45px;">
           <button class="dropbtn">{{current_user.name}}
             <i class="fa fa-caret-down"></i>
           </button>

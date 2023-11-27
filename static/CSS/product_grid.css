@@ -242,6 +242,7 @@
       line-height: 1;
       padding: 10px 0 0;
       text-align: center;
+      font-weight: bold;
   }
     .product_image .product_buttons {
       display: block;
@@ -258,6 +259,7 @@
     }
     .product_desc {
       text-align: center;
+      color: gray;
     }
     .product_values .product_buttons {
       display: none;

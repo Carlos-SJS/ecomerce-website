@@ -4,6 +4,7 @@ import flask_login
 import sqlite3 as sql
 from werkzeug.security import generate_password_hash, check_password_hash, safe_join
 import os
+from datetime import datetime
 
 categories = []
 db_file = "gennady_store.db"
@@ -28,11 +29,25 @@ login_manager = LoginManager(app)
 #Main page
 @app.route("/")
 def main_page():
-    if flask_login.current_user.is_anonymous:
-        print("The user is not logged in")
-    else:
-        print(f"The user is {flask_login.current_user.name}")
-    return render_template("basic_page.html", title="Gennady.Store", main_message="Bienvenido a Gennady.Store", secondary_message="La mejor tienda para los verdaderos ICPCerdos")
+    cat_show = ["Libros", "Tecnología", "Entretenimiento"]
+    s_categories = []
+    
+    con = sql.connect(db_file)
+    cur = con.cursor()
+    
+    for cat in cat_show:
+        c_data = {"name": cat, "products":[]}
+        c_prods = cur.execute(f"SELECT ID_Producto FROM Categoria WHERE Categoria = \"{cat}\" LIMIT 5").fetchall()
+        for prod in c_prods:
+            q_dat = cur.execute(f"SELECT Nombre, Precio, ID FROM Producto WHERE ID = {prod[0]}").fetchall()
+            p_data = {"name": q_dat[0][0], "price": q_dat[0][1], "id": prod[0]}
+            img = cur.execute(f"SELECT Imagen FROM Imagenes_Producto WHERE ID_Producto = {prod[0]} LIMIT 1").fetchall()[0][0]
+            p_data["image"] = img
+            
+            c_data["products"].append(p_data)
+        
+        s_categories.append(c_data)
+    return render_template("main_page.html", categories=categories, title="Gennady.Store", s_categories=s_categories)
 @app.route("/products")
 def products_page():
     con = sql.connect(db_file)
@@ -66,8 +81,11 @@ def products_page():
             products[-1]["Images"].append(img[0])
         
     con.close()
+    
+    if len(products) == 0:
+        return render_template("basic_page.html", title="Productos", categories=categories, main_message="No se encontraron productos", secondary_message="No se encontraron productos con los criterios de búsqueda")
 
-    return render_template("products.html", title="Products - Mamazon", products=products, categories=categories, current_user=flask_login.current_user)
+    return render_template("products.html", title="Productos", products=products, categories=categories, current_user=flask_login.current_user)
 
 @app.route("/product")
 def product_page():
@@ -83,7 +101,13 @@ def product_page():
     
     user = flask_login.current_user
     res_img = cur.execute(f"SELECT Imagen FROM Imagenes_Producto WHERE ID_Producto = {product_id}").fetchall()
-    product_data = {"Name": res[0][0], "Price": res[0][1], "Description": res[0][2], "Full_Description": res[0][4], "Seller": res[0][5], "Stock": res[0][3], "Images":[]}
+    product_data = {"Name": res[0][0], "Price": round(res[0][1], 2), "Description": res[0][2], "Full_Description": res[0][4], "Seller": res[0][5], "Stock": res[0][3], "Images":[]}
+    
+    rev_data = cur.execute(f"SELECT Titulo, Contenido, Fecha, Calificacion, Autor FROM Reviews_Producto WHERE Producto = {product_id}").fetchall()
+    reviews = []
+    for rev in rev_data:
+        r = {"title": rev[0], "content": rev[1], "date": rev[2], "stars": rev[3], "author": rev[4]}
+        reviews.append(r)
     
     if not user.is_anonymous:
         cart_id = cur.execute(f"SELECT ID FROM Carrito WHERE Usuario = {user.id}").fetchall()[0][0]
@@ -98,13 +122,15 @@ def product_page():
     
     con.close()
     
-    return render_template("product_page.html", categories=categories, current_user=flask_login.current_user, p_data= product_data)
+    print(reviews)
+    
+    return render_template("product_page.html", categories=categories, current_user=flask_login.current_user, p_data= product_data, reviews=reviews)
 
 @app.route("/mycart")
 def cart_page():
     user = flask_login.current_user
     if user.is_anonymous:
-        return render_template("basic_page.html", title="Mi carrito", main_message="<You must be loged in to acces this page")
+        return render_template("basic_page.html", title="Mi carrito", categories=categories, main_message="Debes iniciar sesión para acceder a esta página")
     
     
     con = sql.connect(db_file)
@@ -113,7 +139,7 @@ def cart_page():
     p_ids = cur.execute(f"SELECT ID_Producto, Count FROM Lista_Productos_Carrito WHERE ID_Carrito = {cart_data[0]}").fetchall()
     
     if len(p_ids) == 0:
-        return render_template("basic_page.html", title="Mi carrito", main_message="Tu carrito esta vacio!", secondary_message="Visita la página de productos para llenar tu carrito")
+        return render_template("basic_page.html", title="Mi carrito", categories=categories, main_message="Tu carrito esta vacio!", secondary_message="Visita la página de productos para llenar tu carrito")
 
     products = []
     for prod in p_ids:
@@ -121,7 +147,7 @@ def cart_page():
         img = cur.execute(f"SELECT Imagen FROM Imagenes_Producto WHERE ID_Producto = {prod[0]} LIMIT 1").fetchall()[0][0]
         products.append({"id": res[0][0], "name": res[0][1], "description": res[0][2], "price": res[0][3]*prod[1], "count": prod[1], "image": img})
 
-    return render_template("cart_page.html", categories=categories, current_user=flask_login.current_user, products=products, total=cart_data[1])
+    return render_template("cart_page.html", categories=categories, current_user=flask_login.current_user, products=products, total=round(cart_data[1],2))
 
 @app.route("/my_orders")
 @flask_login.login_required
@@ -130,12 +156,12 @@ def orders_page():
     
     con = sql.connect(db_file)
     cur = con.cursor()
-    orders_data = cur.execute(f"SELECT ID, Total FROM Ordenes WHERE Usuario = {user.id}").fetchall()
+    orders_data = cur.execute(f"SELECT ID, Total, Fecha FROM Ordenes WHERE Usuario = {user.id} ORDER BY Fecha DESC").fetchall()
     
     orders = []
     for order in orders_data:
         prods = cur.execute(f"Select ID_Producto, Count FROM Lista_Productos_Orden WHERE ID_Orden = {order[0]}").fetchall()
-        order_d = {"price": order[1], "products": []}
+        order_d = {"price": round(order[1], 2) , "products": [], "fecha": order[2]}
         for p in prods:
             p_dat = cur.execute(f"SELECT Nombre, Precio FROM Producto WHERE ID = {p[0]}").fetchall()[0]
             img = cur.execute(f"SELECT Imagen FROM Imagenes_Producto WHERE ID_Producto = {p[0]}").fetchall()[0][0]
@@ -143,7 +169,6 @@ def orders_page():
             
             order_d["products"].append(prod)
         orders.append(order_d)
-        print(order_d["products"])
 
     return render_template("orders_page.html", categories=categories, current_user=flask_login.current_user, orders=orders)
     
@@ -199,7 +224,27 @@ def add_to_cart():
     cur.execute(f"UPDATE Carrito SET Total = Total + {count * prod_price} WHERE ID = {cart_id}")
     con.commit()
     
-    return "200-OK"
+    return "ok", 200
+
+@app.route('/submit_review', methods=['POST'])
+def sumbit_review():
+    user = flask_login.current_user
+    if user.is_anonymous:
+        abort(401, 'Unauthorized: Bad Authentication')
+        
+    product_id = request.form.get("productid")
+    title = request.form.get("title")
+    content = request.form.get("content")
+    stars = int(request.form.get("stars"))
+    
+    con = sql.connect(db_file)
+    cur = con.cursor()
+    
+    cur.execute(f"INSERT INTO Reviews_Producto(Titulo, Contenido, Fecha, Calificacion, Autor, Producto) VALUES (\"{title}\", \"{content}\", \"{datetime.now().strftime('%Y-%m-%d')}\", {stars}, {user.id}, {product_id})")
+    con.commit()
+    con.close()
+    
+    return "ok", 200
 
 @app.route('/upload_image', methods=['POST'])
 @flask_login.login_required
@@ -225,29 +270,59 @@ def create_product():
         return "You do not have permission to be here kido"
     
     if request.method == 'GET':
-        return render_template("add_product.html" )
+        return render_template("add_product.html", categories=categories, current_user=flask_login.current_user)
     
     p_name = request.form.get('name')
-    p_sdesc = request.form.get('short_desc')
-    p_fdesc = request.form.get('full_desc')
+    p_sdesc = request.form.get('short_desc').replace("\"", "\"\"")
+    p_fdesc = request.form.get('full_desc').replace("\"", "\"\"")
     price = float(request.form.get('price'))
     stock = int(request.form.get('stock'))
     images = request.form.getlist('image')
+    pcategories = request.form.get('categories').split(',')
+    
     
     con = sql.connect(db_file)
     cur = con.cursor()
     
-    cur.execute(f"INSERT INTO Producto(Nombre, Precio, Descripcion, Descripcion_Larga, Stock, Vendedor, Cantidad_Vendida) VALUES (\"{p_name}\", {price}, \"{p_sdesc}\", \"{p_fdesc}\", {stock}, {user.seller_id}, {0})")
+    cur.execute(f"INSERT INTO Producto(Nombre, Precio, Descripcion, Descripcion_Larga, Stock, Vendedor, Cantidad_Vendida, F_Publicacion) VALUES (\"{p_name}\", {price}, \"{p_sdesc}\", \"{p_fdesc}\", {stock}, {user.seller_id}, {0}, \"{datetime.now().strftime('%Y-%m-%d')}\")")
     new_pid =  cur.execute("SELECT last_insert_rowid()").fetchall()[0][0]
 
     for img in images:
         cur.execute(f"INSERT INTO Imagenes_Producto(ID_Producto, Imagen) VALUES ({new_pid}, \"{img}\")")
+    for cat in pcategories:
+        cur.execute(f"INSERT INTO Categoria(ID_Producto, Categoria) VALUES({new_pid}, \"{cat}\")")
     
     con.commit()
     con.close()
     
-    return "200-OK"
+    return 'ok', 200
     
+@app.route("/order_cart", methods=['POST'])
+@flask_login.login_required
+def order_cart():
+    user = flask_login.current_user
+    
+    con = sql.connect(db_file)
+    cur = con.cursor()
+    cart = cur.execute(f"SELECT ID, Total FROM Carrito WHERE Usuario = {user.id}").fetchall()[0]
+    cart_id = cart[0]
+    
+    c_prods = cur.execute(f"SELECT ID_Producto, Count FROM Lista_Productos_Carrito WHERE ID_Carrito = {cart_id}").fetchall()
+    cur.execute(f"INSERT INTO Ordenes(Fecha,Total,Usuario) VALUES(\"{datetime.now().strftime('%Y-%m-%d')}\", {cart[1]}, {user.id})")
+    order_id =  cur.execute("SELECT last_insert_rowid()").fetchall()[0][0]
+    
+    for p in c_prods:
+        cur.execute(f"INSERT INTO Lista_Productos_Orden(ID_Orden, ID_Producto, Count) VALUES({order_id}, {p[0]}, {p[1]})")
+        cur.execute(f"UPDATE Producto SET Stock = Stock - {p[1]} WHERE ID = {p[0]};")
+    
+    cur.execute(f"UPDATE Carrito SET Total = 0 WHERE ID = {cart_id};")
+    cur.execute(f"DELETE FROM Lista_Productos_Carrito WHERE ID_Carrito = {cart_id};")
+    
+    con.commit()
+    con.close()
+        
+    return 'ok', 200
+
 # DB connection tests
 @app.route("/db_products")
 def db_products():
@@ -255,7 +330,6 @@ def db_products():
     cur = con.cursor()
 
     res = cur.execute("SELECT * FROM Producto").fetchall()
-    print(type(res[0]))
 
     style_sheet = "table {border-collapse: collapse;border-spacing: 0px;}table,th,td{padding: 5px;border: 1px solid black;}"
 
@@ -298,7 +372,6 @@ def db_insert_submit():
 
     res = cur.execute(f"INSERT INTO Products(Name, Price, StockSize) VALUES(\"{name}\", {price}, {stock})").fetchall()
     con.commit()
-    print(f"INSERT INTO Products(Name, Price, StockSize) VALUES(\"{name}\", {price}, {stock})")
     con.close()
     
     return f"<p>name: {name}</p> <p>price: {price}</p> <p>stock: {stock}</p>"
@@ -329,7 +402,6 @@ def get_user(email):
 
     res = cur.execute(f"SELECT * from Usuario where Email = \"{email}\"").fetchall()
     s_res = cur.execute(f"SELECT ID FROM Vendedor WHERE ID_Usuario = {res[0][0]}").fetchall()
-    print(s_res)
     if(len(res) > 0):
         if(len(s_res) == 0):
             return User(str(res[0][0]), res[0][1], res[0][2], res[0][3])
@@ -350,7 +422,7 @@ def create_user(username, email, password):
         return False
     
     password = generate_password_hash(password)
-    cur.execute(f"INSERT INTO Usuario(Nombre, Email, Password) VALUES (\"{username}\", \"{email}\", \"{password}\")")
+    cur.execute(f"INSERT INTO Usuario(Nombre, Email, Password, F_Creacion) VALUES (\"{username}\", \"{email}\", \"{password}\", \"{datetime.now().strftime('%m/%d/%Y')}\")")
     new_id = cur.execute(f"SELECT ID from Usuario where Nombre = \"{username}\"").fetchall()[0][0]
     cur.execute(f"INSERT INTO Carrito(Usuario, Total) VALUES({new_id}, {0})")
     con.commit()
@@ -365,7 +437,6 @@ def load_user(user_id):
 
     res = cur.execute(f"SELECT * from Usuario where ID = \"{user_id}\"").fetchall()
     s_res = cur.execute(f"SELECT ID FROM Vendedor WHERE ID_Usuario = {res[0][0]}").fetchall()
-    print(s_res)
     if(len(res) > 0):
         if(len(s_res) == 0):
             return User(str(res[0][0]), res[0][1], res[0][2], res[0][3])
@@ -392,9 +463,9 @@ def login():
     
     if user != None and check_password_hash(user.password, password):
         flask_login.login_user(user)
-        return redirect(url_for('protected'))
+        return redirect(url_for('main_page'))
 
-    return 'Bad login'
+    return render_template("basic_page.html", title="Login", main_message="Login incorrecto", secondary_message="El correo o contraseña es incorrecto")
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -412,10 +483,11 @@ def signup():
     password = str(request.form['password'])
     
     if create_user(username, email, password):
-        return "Account created successfully"
+        flask_login.login_user(get_user(email))
+        return redirect(url_for('main_page'))
     
     
-    return "The username or the email is already in use"
+    return render_template("basic_page.html", title="Productos", main_message="No se pudo crear la cuenta", secondary_message="El correo o nombre de usario ya esta en uso")
 
 
 @app.route('/protected')

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %} Gennady.Sore {% endblock %}
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('.static', filename='CSS/main_page.css') }}">
+{% endblock %}
+{% block scripts %}
+    <script src="{{ url_for('.static', filename='JS/product_redirect.js') }}"></script>
+{% endblock %}
+
+
+{% block content %}
+    <div class="banner">
+        <img src="{{url_for('.static', filename='gs_logo.png')}}" style="width: 200px;height: 200px;"  ="Banner Image">
+        <div class="banner-text">
+            <h1 style="font-size: 70px; color: #ff5015;">Gennady.Store</h1>
+            <h3 style="color: #d58a71;">La tienda para los verdaderos ICPCerdos</h3>
+        </div>
+    </div>
+
+    {% for cat in s_categories %}
+        <div style="margin-top: 40px;">
+            <a class="cat_title" onclick="location.href='{{url_for('products_page')}}?Category={{cat["name"]}}';"> {{cat["name"]}}  <span style="color: rgb(0, 115, 255); font-size: 20px; margin-left: 30px;">ver más</span></a>
+            <div class="container">
+                {% for p in cat["products"] %}
+                    <div class="entry" onclick="redirectProduct({{p["id"]}})">
+                        <img src="{{url_for('.static', filename='uploads/'+p["image"])}}">
+                        <div class="entry-text">
+                            <p>{{p["name"]}}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

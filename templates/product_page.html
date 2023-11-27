@@ -9,6 +9,7 @@
 {% endblock %}
 {% block scripts %}
     <script src="{{ url_for('.static', filename='JS/product_page.js') }}"></script>
+    <script src="{{ url_for('.static', filename='JS/send_review.js') }}"></script>
     <script src="{{ url_for('.static', filename='JS/toastr.js') }}"></script>
     <script>
         var count_input = document.getElementById('cart_count');
@@ -43,9 +44,10 @@
         </div>
         <div class="column">
             <h1>{{p_data["Name"]}}</h1>
-            <p>{{p_data["Description"]}}</p>
+            <p><b>{{p_data["Description"]}}</b></p>
+            <p>{{p_data["Full_Description"]}}</p>
         </div>
-        <div class="column">
+        <div class="column smoll">
             <h1>${{p_data["Price"]}}</h1>
             <h4>{{p_data["Stock"]}} in stock</h4>
             {% if not current_user.is_anonymous %}
@@ -57,5 +59,48 @@
             <button class = "addtocart" onclick="addToCart()">Add to cart</button>
             {% endif %}
         </div>
+    </div>
+
+    {% for rev in reviews %}
+        <div class="main-container">
+            <div class="review-container">
+                <div class="review-title">{{rev["title"]}}</div>
+            
+                <div class="star-rating">
+                    <input type="radio" id="star5" name="rating" value="5">
+                    <label for="star5" {% if rev["stars"] < 1%}class="selected"{%endif%}>&#9733;</label>
+                    <input type="radio" id="star4" name="rating" value="4">
+                    <label for="star4" {% if rev["stars"] < 2%}class="selected"{%endif%}>&#9733;</label>
+                    <input type="radio" id="star3" name="rating" value="3">
+                    <label for="star3" {% if rev["stars"] < 3%}class="selected"{%endif%}>&#9733;</label>
+                    <input type="radio" id="star2" name="rating" value="2">
+                    <label for="star2" {% if rev["stars"] < 4%}class="selected"{%endif%}>&#9733;</label>
+                    <input type="radio" id="star1" name="rating" value="1">
+                    <label for="star1" {% if rev["stars"] < 5%}class="selected"{%endif%}>&#9733;</label>
+                </div>
+            
+                <div class="review-content">
+                    <p>{{rev["content"]}}</p>
+                </div>
+            </div>    
+        </div>
+    {% endfor %}
+    <div class="main-container">
+        <div class="review-container" style="width: 35%;">
+            <textarea class="review-title" id="rev-title" placeholder="Título de la reseña" rows="1"></textarea>
+        
+            <div class="star-rating">
+                <label id="st5" onclick="setStars(1)">&#9733;</label>
+                <label id="st4" onclick="setStars(2)">&#9733;</label>
+                <label id="st3" onclick="setStars(3)">&#9733;</label>
+                <label id="st2" onclick="setStars(4)">&#9733;</label>
+                <label id="st1" onclick="setStars(5)">&#9733;</label>
+            </div>
+        
+            <div class="review-content">
+                <textarea placeholder="Escribe aqui tu reseña" style="width: 100%;" rows="5" id="rev-content"></textarea>
+            </div>
+            <button class="submit-button" onclick="submitReview()">Enviar review</button>
+        </div>    
     </div>
 {% endblock %}

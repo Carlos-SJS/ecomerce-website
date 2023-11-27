@@ -60,6 +60,7 @@ function createProduct(){
     var fullDesc = document.getElementById('FullDescription').value;
     var price = parseFloat(document.getElementById('ProdPrice').value, 10);
     var stock = parseInt(document.getElementById('ProdStock').value, 10);
+    var categories = document.getElementById('ProdCat').value;
 
     if(isNaN(price)){
         toastr.error("The product price is invalid");
@@ -78,6 +79,7 @@ function createProduct(){
     data.append('full_desc', fullDesc);
     data.append('price', price);
     data.append('stock', stock);
+    data.append('categories', categories);
 
     fetch(url, {
         method: 'POST',

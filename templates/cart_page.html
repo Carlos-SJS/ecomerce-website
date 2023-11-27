@@ -1,11 +1,16 @@
 {% extends 'base.html' %}
 
-{% block title %} Mi Carrito {% endblock %}
+{% block title %} Mi Carrito - Gennady.Store{% endblock %}
 {% block styles %}
     <link rel="stylesheet" href="{{ url_for('.static', filename='CSS/list_containers.css') }}">
+    <link rel="stylesheet" href="{{ url_for('.static', filename='CSS/product_page.css') }}">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
 {% endblock %}
 {% block scripts %}
     <script src="{{ url_for('.static', filename='JS/product_redirect.js') }}"></script>
+    <script src="{{ url_for('.static', filename='JS/cart_page.js') }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -19,5 +24,7 @@
             </div>
         </div>
     {% endfor %}
+    <button class="addtocart" style="margin: auto;" onclick="orderCart()">Realizar compra</button>
+
 {% endblock %}
 
